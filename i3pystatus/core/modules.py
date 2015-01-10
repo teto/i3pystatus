@@ -8,16 +8,16 @@ class Module(SettingsBase):
     output = None
     position = 0
 
-    settings = ('on_leftclick', "Callback called on left click (string)",
-                'on_rightclick', "Callback called on right click (string)",
-                'on_upscroll', "Callback called on scrolling up (string)",
-                'on_downscroll', "Callback called on scrolling down (string)",
+    settings = ('on_clicks', "Dict of callback called on click (also mouseweel events)",
+                # 'on_rightclick', "Callback called on right click (string)",
+                # 'on_upscroll', "Callback called on scrolling up (string)",
+                # 'on_downscroll', "Callback called on scrolling down (string)",
                 )
 
-    on_leftclick = None
-    on_rightclick = None
-    on_upscroll = None
-    on_downscroll = None
+    on_clicks = {}
+    # on_rightclick = None
+    # on_upscroll = None
+    # on_downscroll = None
 
     def registered(self, status_handler):
         """Called when this module is registered with a status handler"""
@@ -63,31 +63,44 @@ class Module(SettingsBase):
                     )
         """
 
+        def map_name_to_button_id(button):
+            conv = {
+            "left": 1,
+            "middle": 2,
+            "right": 3,
+            "wheelup": 4,
+            "wheeldown": 5,
+            }
+
+            return getattr(conv, button, button)
+
         def split_callback_and_args(cb):
             if isinstance(cb, list):
                 return cb[0], cb[1:]
             else:
                 return cb, []
 
-        cb = None
-        if button == 1:  # Left mouse button
-            cb = self.on_leftclick
-        elif button == 3:  # Right mouse button
-            cb = self.on_rightclick
-        elif button == 4:  # mouse wheel up
-            cb = self.on_upscroll
-        elif button == 5:  # mouse wheel down
-            cb = self.on_downscroll
-        else:
-            self.logger.info("Button '%d' not handled yet." % (button))
-            return
+        # cb = None
+        button = map_name_to_button_id(button)
+        cb = getattr(self.on_clicks, button, None)
+        # if button == 1:  # Left mouse button
+        #     cb = self.on_leftclick
+        # elif button == 3:  # Right mouse button
+        #     cb = self.on_rightclick
+        # elif button == 4:  # mouse wheel up
+        #     cb = self.on_upscroll
+        # elif button == 5:  # mouse wheel down
+        #     cb = self.on_downscroll
+        # else:
+            # self.logger.info("Button '%d' not handled yet." % (button))
+            # return
 
         if not cb:
-            self.logger.info("no cb attached")
+            self.logger.info("No cb attached to click %d" % button)
             return
-        else:
-            cb, args = split_callback_and_args(cb)
-            self.logger.debug("cb=%s args=%s" % (cb, args))
+    
+        cb, args = split_callback_and_args(cb)
+        self.logger.debug("cb=%s args=%s" % (cb, args))
 
         if callable(cb):
             return cb(self)
